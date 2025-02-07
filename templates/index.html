@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PatentsView Downloader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Optional: jQuery for dynamic dropdowns -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">PatentsView Downloader</a>
+      </div>
+    </nav>
+
+    <div class="container mt-4">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div
+        class="alert alert-{{ category }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      <h1 class="mb-4">Download a Dataset</h1>
+      <form method="post">
+        <div class="mb-3">
+          <label for="section" class="form-label">Section</label>
+          <select class="form-select" id="section" name="section" required>
+            <option value="" selected disabled>Select Section</option>
+            {% for section in datasets.keys() %}
+            <option value="{{ section }}">{{ section }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="subset" class="form-label">Subset</label>
+          <select class="form-select" id="subset" name="subset" required>
+            <option value="" selected disabled>Select Subset</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="table" class="form-label">Table</label>
+          <select class="form-select" id="table" name="table" required>
+            <option value="" selected disabled>Select Table</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="nrows" class="form-label"
+            >Number of Rows (for preview only)</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            id="nrows"
+            name="nrows"
+            placeholder="e.g., 5"
+          />
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" name="action" value="preview" class="btn btn-primary">
+            Preview Data
+          </button>
+          <button type="submit" name="action" value="download" class="btn btn-success">
+            Download File
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Bootstrap5 JS Bundle -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    ></script>
+
+    <script>
+      // The datasets object is passed as JSON from Flask.
+      const config = {{ datasets | tojson }};
+
+      // When the section changes, populate the subset dropdown.
+      $("#section").on("change", function () {
+        const section = $(this).val();
+        let subsetOptions =
+          '<option value="" selected disabled>Select Subset</option>';
+        if (config[section]) {
+          for (const subset in config[section]) {
+            subsetOptions += `<option value="${subset}">${subset}</option>`;
+          }
+        }
+        $("#subset").html(subsetOptions);
+        $("#table").html(
+          '<option value="" selected disabled>Select Table</option>'
+        );
+      });
+
+      // When the subset changes, populate the table dropdown.
+      $("#subset").on("change", function () {
+        const section = $("#section").val();
+        const subset = $(this).val();
+        let tableOptions =
+          '<option value="" selected disabled>Select Table</option>';
+        if (config[section] && config[section][subset]["tables"]) {
+          for (const table of config[section][subset]["tables"]) {
+            tableOptions += `<option value="${table}">${table}</option>`;
+          }
+        }
+        $("#table").html(tableOptions);
+      });
+    </script>
+  </body>
+</html>
+
